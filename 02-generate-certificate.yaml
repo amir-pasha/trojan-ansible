@@ -1,0 +1,50 @@
+---
+- hosts: server
+  vars:
+    email: EMAIL # domain owner email address
+    primary_domain: PRIMARY_DOMAIN # e.g. example.com
+    sub_domain: SUB_DOMAIN # e.g. sub.example.com
+    ansible_port: NEW_SSH_PORT # new ssh port added via previous step
+  name: SSL certificate generation
+  remote_user: NEW_SSH_USER # new ssh user added via previous step
+  become: yes
+  become_method: su
+
+  tasks:
+
+    - name: Update apt packages
+      apt:
+        update_cache: yes
+
+    - name: Install pip3
+      apt: name=python3-pip state=present
+
+    - name: Install cerbot
+      pip:
+        name:
+          - certbot
+          - certbot-nginx
+        executable: pip3
+
+    - name: Register cerbot
+      shell: |
+        certbot -n register --agree-tos --email {{ email }}
+        touch /etc/letsencrypt/.registered
+      args:
+        creates: /etc/letsencrypt/.registered
+
+    - name: Setup cronjob for renewal
+      cron:
+        name: certbot-renewal
+        job: "/bin/bash -lc '/usr/local/bin/certbot -q renew'"
+        minute: "0"
+        hour: "14"
+
+    - name: Install nginx
+      apt: name=nginx state=present
+
+    - name: Generate certificate
+      command: "/usr/local/bin/certbot -v -n --nginx certonly -d {{ primary_domain }},{{ sub_domain }}"
+      args:
+        creates: "/etc/letsencrypt/live/{{ primary_domain }}"
+      ignore_errors: true
