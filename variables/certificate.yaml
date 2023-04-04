@@ -1,0 +1,8 @@
+---
+ansible_user: "{{ ssh_user }}"
+ansible_port: "{{ ssh_port }}"
+email: ""
+primary_domain: ""
+sub_domain: ""
+cert_file: "/etc/letsencrypt/live/{{ primary_domain }}/cert.pem"
+private_key: "/etc/letsencrypt/live/{{ primary_domain }}/privkey.pem"
