@@ -1,0 +1,65 @@
+---
+ - hosts: server
+   name: Setup trojan
+   vars:
+     primary_domain: PRIMARY_DOMAIN # primary domain e.g. example.com
+     sub_domain: SUB_DOMAIN # sub domain e.g. sub.example.com
+     password: PASSWORD # password used to access trojan
+     ansible_port: NEW_SSH_PORT  # added via step 01
+   remote_user: NEW_SSH_USER # added via step 01
+   become: yes
+   become_method: su
+
+   tasks:
+
+     - name: Install dependencies
+       apt:
+         pkg:
+         - git    
+         - build-essential
+         - libssl-dev
+         - cmake
+         - libboost-system-dev
+         - libboost-thread-dev
+         - libboost-program-options-dev
+         - libboost-test-dev
+         - libmysqlclient-dev
+
+     - name: Clone trojan into /opt
+       shell: |
+         git clone https://github.com/trojan-gfw/trojan.git /opt/trojan
+         cd /opt/trojan
+         cmake . && make -j $(nproc) && strip -s trojan
+
+     - name: Add symbolic link
+       file:
+         state: link
+         src: /opt/trojan/trojan
+         dest: /usr/local/bin/trojan
+
+     - name: Create directory
+       file:
+         path: /usr/local/etc/trojan
+         state: directory
+
+     - name: Copy trojan config file from template to server
+       template:
+         src: config.json
+         dest: /opt/trojan/config.json
+
+     - name: Create symbolic link for config file
+       file:
+         state: link
+         src: /opt/trojan/config.json
+         dest: /usr/local/etc/trojan/config.json
+
+     - name: Copy trojan system service
+       template:
+         src: trojan.service
+         dest: /etc/systemd/system
+
+     - name: Start and enable trojan system service
+       systemd:
+         name: trojan.service
+         state: started
+         enabled: true
