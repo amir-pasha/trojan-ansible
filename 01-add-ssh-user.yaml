@@ -8,7 +8,7 @@
     - name: Add a new user
       user:
         name={{ ssh_user }}
-        password={{ password }}
+        password={{ ssh_password }}
         shell=/usr/bin/bash
 
     - name: Grant login access from local machine
