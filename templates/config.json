@@ -5,7 +5,7 @@
     "remote_addr": "127.0.0.1",
     "remote_port": 80,
     "password": [
-        "{{ password }}"
+        "{{ trojan_password }}"
     ],
     "log_level": 0,
     "ssl": {
