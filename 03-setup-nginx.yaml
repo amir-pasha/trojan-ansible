@@ -1,41 +1,37 @@
 ---
- - hosts: server
-   name: Nginx configuration
-   vars:
-    primary_domain: PRIMARY_DOMAIN # e.g. example.com
-    sub_domain: SUB_DOMAIN # e.g. sub.example.com
-    cert_file: "/etc/letsencrypt/live/{{ primary_domain }}/cert.pem"
-    private_key: "/etc/letsencrypt/live/{{ primary_domain }}/privkey.pem"
-    ansible_port: NEW_SSH_PORT # added via step 01
-   remote_user: NEW_SSH_USER # added via step 01
-   become: true
-   become_method: su
+- hosts: host
+  name: Nginx configuration
+  vars_files:
+    - variables/ssh.yaml
+    - variables/certificate.yaml
+  become: true
+  become_method: su
 
-   tasks:
+  tasks:
 
-      - name: Copy config file to sites-available area
-        template:
-          src: site.conf
-          dest: "/etc/nginx/sites-available/{{ primary_domain }}"
+    - name: Copy config file to sites-available area
+      template:
+        src: site.conf
+        dest: "/etc/nginx/sites-available/{{ primary_domain }}"
 
-      - name: Enable site
-        file:
-          state: link
-          src: "/etc/nginx/sites-available/{{ primary_domain }}"
-          dest: "/etc/nginx/sites-enabled/{{ primary_domain }}"
-        notify:
-          - restart nginx
+    - name: Enable site
+      file:
+        state: link
+        src: "/etc/nginx/sites-available/{{ primary_domain }}"
+        dest: "/etc/nginx/sites-enabled/{{ primary_domain }}"
+      notify:
+        - restart nginx
 
-      - name: delete default site
-        file:
-          state: absent
-          path: "/etc/nginx/sites-enabled/default"
+    - name: delete default site
+      file:
+        state: absent
+        path: "/etc/nginx/sites-enabled/default"
 
-      - name: Add stream block to proxy requests by sni
-        blockinfile:
-          insertafter: EOF
-          path: "/etc/nginx/nginx.conf"
-          block: '
+    - name: Add stream block to proxy requests by sni
+      blockinfile:
+        insertafter: EOF
+        path: "/etc/nginx/nginx.conf"
+        block: '
           stream {
               map $ssl_preread_server_name $sni {
                 default nginx;
@@ -58,9 +54,9 @@
              }
           }
           '
-   handlers:
-      - name: restart nginx
-        become: true
-        service:
-          name: nginx
-          state: restarted
+  handlers:
+    - name: restart nginx
+      become: true
+      service:
+        name: nginx
+        state: restarted

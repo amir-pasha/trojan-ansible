@@ -1,13 +1,10 @@
 ---
-- hosts: server
-  vars:
-    email: EMAIL # domain owner email address
-    primary_domain: PRIMARY_DOMAIN # e.g. example.com
-    sub_domain: SUB_DOMAIN # e.g. sub.example.com
-    ansible_port: NEW_SSH_PORT # new ssh port added via previous step
+- hosts: host
   name: SSL certificate generation
-  remote_user: NEW_SSH_USER # new ssh user added via previous step
-  become: yes
+  vars_files:
+    - variables/ssh.yaml
+    - variables/certificate.yaml
+  become: true
   become_method: su
 
   tasks:

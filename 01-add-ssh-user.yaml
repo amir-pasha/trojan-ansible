@@ -1,57 +1,53 @@
 ---
- - hosts: server
-   vars:
-     - new_ssh_user: NEW_SSH_USER # new ssh user
-     - password: HASHED_PASSWORD # hashed password generated with `openssl password -6`
-     - new_ssh_port: NEW_SSH_PORT # change default ssh port
-     - public_key_path: PUBLIC_KEY_PATH # your public key path e.g. /home/user/.ssh/id_rsa.pub
-   remote_user: root
+- hosts: host
+  vars_files:
+    - variables/ssh.yaml
 
-   tasks:
+  tasks:
 
-   - name: Add a new user
-     user:
-          name={{ new_ssh_user }}
-          password={{ password }}
-          shell=/usr/bin/bash
+    - name: Add a new user
+      user:
+        name={{ ssh_user }}
+        password={{ password }}
+        shell=/usr/bin/bash
 
-   - name: Grant login access from local machine
-     authorized_key: user={{ new_ssh_user }}
-                     key="{{ lookup('file', public_key_path) }}"
-                     state=present
+    - name: Grant login access from local machine
+      authorized_key: user={{ ssh_user }}
+        key="{{ lookup('file', public_key_path) }}"
+        state=present
 
-   - name: Disable password authentication
-     lineinfile:
-           dest=/etc/ssh/sshd_config
-           regexp='^PasswordAuthentication'
-           line="PasswordAuthentication no"
-           state=present
-           backup=yes
-     notify:
-       - restart ssh
+    - name: Disable password authentication
+      lineinfile:
+        dest=/etc/ssh/sshd_config
+        regexp='^PasswordAuthentication'
+        line="PasswordAuthentication no"
+        state=present
+        backup=yes
+      notify:
+        - restart ssh
 
-   - name: Disable root login
-     lineinfile:
-           dest=/etc/ssh/sshd_config
-           regexp="^PermitRootLogin"
-           line="PermitRootLogin no"
-           state=present
-           backup=yes
-     notify:
-       - restart ssh
+    - name: Disable root login
+      lineinfile:
+        dest=/etc/ssh/sshd_config
+        regexp="^PermitRootLogin"
+        line="PermitRootLogin no"
+        state=present
+        backup=yes
+      notify:
+        - restart ssh
 
-   - name: Change ssh port
-     lineinfile:
-           dest=/etc/ssh/sshd_config
-           regexp="^Port"
-           line="Port {{ new_ssh_port }}"
-           state=present
-           backup=yes
-     notify:
-       - restart ssh
+    - name: Change ssh port
+      lineinfile:
+        dest=/etc/ssh/sshd_config
+        regexp="^Port"
+        line="Port {{ ssh_port }}"
+        state=present
+        backup=yes
+      notify:
+        - restart ssh
 
-   handlers:
-   - name: restart ssh
-     service:
-       name=sshd
-       state=restarted
+  handlers:
+    - name: restart ssh
+      service:
+        name=sshd
+        state=restarted
